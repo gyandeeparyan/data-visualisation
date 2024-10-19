@@ -17,7 +17,10 @@ export async function POST(req: Request) {
 
   const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET!, { expiresIn: '1h' });
 
-  const response = NextResponse.json({ message: 'Logged in' });
-  response.cookies.set('token', token, { httpOnly: true });
+  // Set the token in a cookie and also return it in the response body
+  const response = NextResponse.json({ message: 'Logged in', token, user });
+  response.cookies.set('userId', user._id.toString(), { httpOnly: true }); // Store user ID in cookie
+  return response;
+  
   return response;
 }
