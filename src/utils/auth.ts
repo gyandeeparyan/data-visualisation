@@ -1,0 +1,16 @@
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+
+export async function hashPassword(password: string) {
+  const hashedPassword = await bcrypt.hash(password, 10);
+  return hashedPassword;
+}
+
+export async function verifyPassword(password: string, hashedPassword: string) {
+  const isValid = await bcrypt.compare(password, hashedPassword);
+  return isValid;
+}
+
+export function generateToken(payload: object) {
+  return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: "1h" });
+}
