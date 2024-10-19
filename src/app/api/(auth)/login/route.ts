@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import dbConnect from '@/lib/dbConnect';
-import { verifyPassword } from '@/utils/auth';
-import { generateToken } from '@/utils/auth';
-import User from "@/models/User";
+import User from '@/models/User';
 
 export async function POST(req: Request) {
   const { email, password } = await req.json();
@@ -10,10 +10,14 @@ export async function POST(req: Request) {
 
   const user = await User.findOne({ email });
 
-  if (!user || !(await verifyPassword(password, user.password))) {
-    return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
-  }
+  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-  const token = generateToken({ email: user.email });
-  return NextResponse.json({ token });
+  const validPassword = await bcrypt.compare(password, user.password);
+  if (!validPassword) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+
+  const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+
+  const response = NextResponse.json({ message: 'Logged in' });
+  response.cookies.set('token', token, { httpOnly: true });
+  return response;
 }

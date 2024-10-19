@@ -1,28 +1,16 @@
 import { NextResponse } from 'next/server';
-import dbConnect from "@/lib/dbConnect";
-import { hashPassword } from '../../../../utils/auth';
-import User from "@/models/User";
+import bcrypt from 'bcrypt';
+import dbConnect from '@/lib/mongodb';
+import User from '@/models/User';
 
 export async function POST(req: Request) {
-  const { email, password ,username} = await req.json();
- await dbConnect();
+  const { username,email, password } = await req.json();
+  await dbConnect();
 
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    return NextResponse.json({ message: 'User already exists' }, { status: 409 });
-  }
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-  const hashedPassword = await hashPassword(password);
-
-
-  const newUser = new User({
-    username,
-    email,
-    password: hashedPassword,
-    
-  });
-  
+  const newUser = new User({username, email, password: hashedPassword });
   await newUser.save();
 
-  return NextResponse.json({ message: 'User created' }, { status: 201 });
+  return NextResponse.json({ message: 'User registered successfully' });
 }
